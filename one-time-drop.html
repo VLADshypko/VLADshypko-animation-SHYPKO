@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Canvas-JS Template</title>
+</head>
+
+<body class="mainbody">
+    <h1 id="header">Ласкаво просимо на наш веб-сайт!</h1>
+    <button class="btn1" type="button" onclick="document.getElementById('header').style.color = 'white'">
+        Click Me!</button>
+    <button class="btn2" type="button" onclick="document.getElementById('header').style.color = '#2CF100'">
+        Click Me!</button>
+    <canvas></canvas>
+    <style>
+        .btn2 {
+            background-color: #2CF100;
+            color: #000000;
+            font-size: 25px;
+            position: absolute;
+            top: 520px;
+            left: 975px
+        }
+
+        .btn1 {
+            background-color: #2CF100;
+            color: #000000;
+            font-size: 25px;
+            position: absolute;
+            top: 520px;
+            right: 975px;
+        }
+
+        h1 {
+            color: white;
+            position: absolute;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body.mainbody {
+            background-color: #000000;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* canvas {
+            border: 4px solid black;
+        } */
+    </style>
+
+    <script>
+        //функція для виводу матриці
+        function drawMatrix(i_matrix, i_colors, i_one_pixel_size) {
+            let matrix_height = i_matrix.length; // висота матриці
+            let matrix_width = i_matrix[0].length; // ширина матриці
+            CANVAS.width = i_one_pixel_size * matrix_width; // встановлюємо ширину canvas
+            CANVAS.height = i_one_pixel_size * matrix_height; // встановлюємо висоту canvas
+            // цикл для проходження по матриці
+            for (let y = 0; y < matrix_height; y++) {
+                for (let x = 0; x < matrix_width; x++) {
+                    let color = i_colors[i_matrix[y][x]]; // встановлюємо кольори частинок
+                    let cords_X = x * i_one_pixel_size; // координата X частинки
+                    let cords_Y = y * i_one_pixel_size; // координата Y частинки
+                    drawPixel(cords_X, cords_Y, color, i_one_pixel_size); // малюємо піксель
+                }
+            }
+        }
+
+        //функція для малювання одного пікселя
+        function drawPixel(cords_X, cords_Y, color, i_one_pixel_size) {
+            CTX.beginPath(); //початок малювання фігури
+            CTX.fillStyle = color; //встановлення кольору фігури
+            CTX.rect(cords_X, cords_Y, i_one_pixel_size, i_one_pixel_size); //малювання прямокутника - аргументи: (x, y, ширина, висота)
+            CTX.closePath(); //кінець малювання фігури
+            CTX.fill(); //вивід фігури на екран
+        }
+
+        //функція для отримання проміжних кольорів
+        function colorTransition(start_color, end_color, iteration_count, current_iteration) {
+            // створюємо пустий масив для збереження результату
+            let result = [];
+            for (let i = 0; i < start_color.length; i++) {
+                // додаємо результати numberTransition до масиву result
+                result.push(numberTransition(start_color[i], end_color[i], iteration_count, current_iteration));
+            }
+
+            // повертаємо результат у вигляді RGB значення
+            return getRGB(result[0], result[1], result[2]);
+        }
+
+        //функція для отримання проміжних числових значень
+        function numberTransition(start_value, end_value, iteration_count, current_iteration) {
+            // визначаємо значення, на яке потрібно змінити в кінці
+            let value_to_change = end_value - start_value;
+
+            // обчислюємо зміну на одну ітерацію
+            let one_iteration = value_to_change / iteration_count;
+
+            // обчислюємо зміну, яка не округлена
+            let modifier_unrounded = one_iteration * current_iteration;
+            // округлюємо зміну до найближчого цілого числа
+            let modifier_rounded = Math.round(modifier_unrounded);
+
+            // повертаємо нове значення змінної
+            return start_value + modifier_rounded;
+        }
+
+        //функція для створення RGB - строки
+        function getRGB(r, g, b) {
+            return `rgb(${r},${g},${b})`
+        }
+
+        // Функція для анімації коліру
+        function animateColor(color_settings) {
+            colors[color_settings.color_id] = colorTransition(
+                color_settings.start_color,           // Початковий колір
+                color_settings.end_color,             // Кінцевий колір
+                color_settings.animation_length,      // Довжина анімації (кількість ітерацій)
+                color_settings.color_iterator         // Ітератор для зміни коліру
+            );
+
+            // Зміна напрямку зміни коліру в залежності від значення ітератора
+            if (color_settings.color_iterator < 0) {
+                color_settings.increment = color_settings.increment * -1; // Зміна напрямку збільшення/зменшення коліру
+            } else if (color_settings.color_iterator > color_settings.animation_length) {
+                color_settings.increment = color_settings.increment * -1; // Зміна напрямку збільшення/зменшення коліру
+            }
+
+            color_settings.color_iterator += color_settings.increment; // Збільшення/зменшення ітератора
+        }
+
+
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * max);
+        }
+
+        function isThereIsParticleInProximityOf(i_matrix, targetParticleID, targetX, targetY) {
+            let result = { 'x': -1, 'y': -1 };
+
+            let matrix_height = i_matrix.length;
+            let matrix_width = i_matrix[0].length;
+
+            let in_prox_left;
+            let in_prox_right;
+            let in_prox_top;
+            let in_prox_down;
+
+            let left_in_bounds = targetX - 1 >= 0;
+            let right_in_bounds = targetX + 1 <= matrix_width - 1;
+            let top_in_bounds = targetY - 1 >= 0;
+            let down_in_bounds = targetY + 2 <= matrix_height;
+
+            // Перевірка чи існує частинка ліворуч від цільової позиції
+            if (left_in_bounds) {
+                in_prox_left = i_matrix[targetY][targetX - 1] == targetParticleID;
+            }
+
+            // Перевірка чи існує частинка праворуч від цільової позиції
+            if (right_in_bounds) {
+                in_prox_right = i_matrix[targetY][targetX + 1] == targetParticleID;
+            }
+
+            // Перевірка чи існує частинка зверху від цільової позиції
+            if (top_in_bounds) {
+                in_prox_top = i_matrix[targetY - 1][targetX] == targetParticleID;
+            }
+
+            // Перевірка чи існує частинка знизу від цільової позиції
+            if (down_in_bounds) {
+                in_prox_down = i_matrix[targetY + 1][targetX] == targetParticleID;
+            }
+
+            // Якщо існує частинка ліворуч і вона є цільовою частинкою, оновити результат
+            if (left_in_bounds && in_prox_left) {
+                result.x = targetX - 1;
+                result.y = targetY;
+            }
+
+            // Якщо існує частинка праворуч і вона є цільовою частинкою, оновити результат
+            if (right_in_bounds && in_prox_right) {
+                result.x = targetX + 1;
+                result.y = targetY;
+            }
+
+            // Якщо існує частинка зверху і вона є цільовою частинкою, оновити результат
+            if (top_in_bounds && in_prox_top) {
+                result.x = targetX;
+                result.y = targetY - 1;
+            }
+
+            // Якщо існує частинка знизу і вона є цільовою частинкою, оновити результат
+            if (down_in_bounds && in_prox_down) {
+                result.x = targetX;
+                result.y = targetY + 1;
+            }
+
+            return result;
+        }
+    </script>
+
+    <script>
+        const CANVAS = document.querySelector('canvas'); //отримую canvas з сторінки
+        const CTX = CANVAS.getContext('2d'); //створення інструменту для малювання на canvas-і
+
+        CANVAS.width = 1500; //встановлюю ширину
+        CANVAS.height = 700; //встановлюю висоту
+
+        async function sleep(mils) {
+            return new Promise((resolve) => setTimeout(resolve, mils))
+        }
+
+        let color1_settings = {
+            'color_id': 1,                      // Ідентифікатор кольору
+            'start_color': [255, 255, 255],         // Початковий колір [червоний, зелений, синій]
+            'end_color': [44, 241, 0],           // Кінцевий колір [червоний, зелений, синій]
+            'animation_length': 1,            // Довжина анімації (кількість ітерацій)
+            'increment': 1,                     // Значення, на яке змінюється колір під час однієї ітерації
+            'color_iterator': 1                 // Ітератор для зміни коліру (1 - збільшення, -1 - зменшення)
+        }
+        let color2_settings = {
+            'color_id': 2,                      // Ідентифікатор кольору
+            'start_color': [255, 255, 255],       // Початковий колір [червоний, зелений, синій]
+            'end_color': [44, 241, 0],         // Кінцевий колір [червоний, зелений, синій]
+            'animation_length': 1,             // Довжина анімації (кількість ітерацій)
+            'increment': 1,                     // Значення, на яке змінюється колір під час однієї ітерації
+            'color_iterator': 1                 // Ітератор для зміни коліру (1 - збільшення, -1 - зменшення)
+        }
+        let color3_settings = {
+            'color_id': 3,                      // Ідентифікатор кольору
+            'start_color': [255, 255, 255],     // Початковий колір [червоний, зелений, синій]
+            'end_color': [255, 255, 255],       // Кінцевий колір [червоний, зелений, синій]
+            'animation_length': 1,             // Довжина анімації (кількість ітерацій_down)
+            'increment': 1,                     // Значення, на яке змінюється колір під час однієї ітерації
+            'color_iterator': 1                 // Ітератор для зміни коліру (1 - збільшення, -1 - зменшення)
+        }
+
+
+        let one_pixel_size = 30;
+        let colors = ['black', 'white', 'blue', 'red'];
+        let matrix = [
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+            [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+
+
+        ];
+
+
+        //функція яка буде виконувати логіку кожної ітерації нашої анімації (одного кадру)
+        function doWork() {
+            colorAnimation()
+
+            calculatePhysics(matrix)
+        }
+
+        //функція вирахоування фізики
+        function calculatePhysics(i_matrix) {
+            let matrix_height = i_matrix.length; // висота матриці
+            let matrix_width = i_matrix[0].length; // ширина матриці
+
+            for (let y = 0; y < matrix_height; y++) { // ітеруємося по рядках матриці
+                for (let x = 0; x < matrix_width; x++) { // ітеруємося по стовпцях матриці
+                    if (i_matrix[y][x] != 0) { // якщо елемент матриці не дорівнює 0
+                        if (i_matrix[y][x] == 1) { // якщо елемент матриці дорівнює 3
+                            let zeroOrOne = getRandomInt(2); // Генеруємо випадкове число 0 або 1
+
+                            let can_drop_up = false; // Змінна, що визначає, чи можна впасти вгору
+
+                            // let can_drop_left = false; // Змінна, що визначає, чи можна впасти ліворуч
+                            // let can_drop_right = false; // Змінна, що визначає, чи можна впасти праворуч
+
+                            if (y - 1 >= 0) {
+                                can_drop_up = i_matrix[y - 1][x] == 0; // Перевіряємо, чи може об'єкт впасти вгору
+
+                                // can_drop_left = i_matrix[y - 1][x - 1] == 0; // Перевіряємо, чи може об'єкт впасти ліворуч
+                                // can_drop_right = i_matrix[y - 1][x + 1] == 0; // Перевіряємо, чи може об'єкт впасти праворуч
+                            }
+
+                            if (can_drop_up) { // якщо об'єкт може впасти вниз
+                                i_matrix[y][x] = 0; // змінюємо поточний елемент матриці на 0 (об'єкт видаляється з поточної позиції)
+                                i_matrix[y - 1][x] = 1; // змінюємо наступний елемент матриці на 1 (об'єкт випадає вниз)
+                            }
+                            else {
+                                i_matrix[y][x] = 2;
+                                //document.getElementById("header").style.color = "white";
+                            }
+                            // else if (can_drop_left || can_drop_right) {
+                            //     i_matrix[y][x] = 0;
+
+                            //     if (zeroOrOne == 0) {
+                            //         if (can_drop_left) {
+                            //             i_matrix[y - 1][x - 1] = 1;
+                            //         }
+                            //         else if (can_drop_right) {
+                            //             i_matrix[y - 1][x + 1] = 1;
+                            //         }
+                            //     }
+                            //     else {
+                            //         if (can_drop_right) {
+                            //             i_matrix[y - 1][x + 1] = 1;
+                            //         }
+                            //         else if (can_drop_left) {
+                            //             i_matrix[y - 1][x - 1] = 1;
+                            //         }
+                            //     }
+                            // }
+
+                        }
+
+                        else if (i_matrix[y][x] == 2) { // якщо елемент матриці дорівнює 2
+                            let zeroOrOne = getRandomInt(2);
+
+                            let can_drop_down = false; // прапорець, який вказує, чи може об'єкт впасти вниз
+
+                            // let can_drop_left = false; // прапорець, який вказує, чи може об'єкт впасти ліворуч
+                            // let can_drop_right = false; // прапорець, який вказує, чи може об'єкт впасти праворуч
+
+
+                            if (y + 1 <= matrix_height - 1) {
+                                can_drop_down = i_matrix[y + 1][x] == 0; // перевіряємо, чи може об'єкт впасти вниз
+
+                                // can_drop_left = i_matrix[y + 1][x - 1] == 0; // перевіряємо, чи може об'єкт впасти вліво
+                                // can_drop_right = i_matrix[y + 1][x + 1] == 0; // перевіряємо, чи може об'єкт впасти вправо
+                            }
+
+
+                            if (can_drop_down) { // якщо об'єкт може впасти вниз
+                                i_matrix[y][x] = 0; // змінюємо поточний елемент матриці на 0 (об'єкт видаляється з поточної позиції)
+                                i_matrix[y + 1][x] = 3; // змінюємо наступний елемент матриці на 1 (об'єкт випадає вниз)
+
+                                // if (y + 1 < matrix_height) { // перевіряємо, чи є наступний рядок в межах матриці
+                                //     y++; // збільшуємо значення y, щоб перейти до наступного рядка матриці
+                                // }
+                                // if (x + 1 < matrix_width) { // перевіряємо, чи є наступний стовпець в межах матриці
+                                //     x++; // збільшуємо значення x, щоб перейти до наступного стовпця матриці
+                                // }
+                            }
+                            else {
+                                i_matrix[y][x] = 1;
+                                //document.getElementById("header").style.color = "#2CF100";
+
+                            }
+                            // else if (can_drop_left || can_drop_right) {
+                            //     i_matrix[y][x] = 0;
+
+                            //     if (zeroOrOne == 0) {
+                            //         if (can_drop_left) {
+                            //             i_matrix[y + 1][x - 1] = 1;  // Зсуваємо частинку вліво
+                            //         }
+                            //         else if (can_drop_right) {
+                            //             i_matrix[y + 1][x + 1] = 1;  // Зсуваємо частинку вправо
+                            //         }
+                            //     }
+                            //     else {
+                            //         if (can_drop_right) {
+                            //             i_matrix[y + 1][x + 1] = 1;  // Зсуваємо частинку вправо
+                            //         }
+                            //         else if (can_drop_left) {
+                            //             i_matrix[y + 1][x - 1] = 1;  // Зсуваємо частинку вліво
+                            //         }
+                            //     }
+                            // }
+                            if (y + 1 < matrix.height) {
+                                y++
+                            }
+                            if (x + 1 < matrix.width) {
+                                x++
+                            }
+
+                        }
+
+                        else if (i_matrix[y][x] == 3) {
+                            i_matrix[y][x] = 2
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
+
+        function colorAnimation() {
+            animateColor(color1_settings)
+            animateColor(color2_settings)
+            animateColor(color3_settings)
+        }
+
+        async function loop() {
+            //Основний цикл while, який відповідає за анімацію
+            while (true) {
+                CTX.clearRect(0, 0, CANVAS.width, CANVAS.height) // Очищає канвас
+
+                doWork() //виклик функції логіки
+
+                drawMatrix(matrix, colors, one_pixel_size) //виклик функції малювання матриці
+
+                await sleep(10) // Затримка анімації в мілісекундах
+            }
+        }
+
+        loop() //виклик функції анімації
+    </script>
+</body>
+
+</html>
