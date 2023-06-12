@@ -208,11 +208,8 @@
     </script>
 
     <script>
-        const CANVAS = document.querySelector('canvas'); //отримую canvas з сторінки
+        const CANVAS = document.querySelector('canvas'); //отримую canvas з сторінки    
         const CTX = CANVAS.getContext('2d'); //створення інструменту для малювання на canvas-і
-
-        CANVAS.width = 1500; //встановлюю ширину
-        CANVAS.height = 700; //встановлюю висоту
 
         async function sleep(mils) {
             return new Promise((resolve) => setTimeout(resolve, mils))
@@ -422,6 +419,11 @@
             //Основний цикл while, який відповідає за анімацію
             while (true) {
                 CTX.clearRect(0, 0, CANVAS.width, CANVAS.height) // Очищає канвас
+
+                var w = window.innerWidth;
+                var h = window.innerHeight;
+
+                one_pixel_size = w / matrix[0].length;
 
                 doWork() //виклик функції логіки
 
